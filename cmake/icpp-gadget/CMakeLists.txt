@@ -72,10 +72,10 @@ message(STATUS "Configuring unicorn...")
 execute_process(COMMAND ${PYTHON}
   ${ICPP_ROOT}/tool/qemu_mmu_patcher.py
   ${ICPP_ROOT}/third/unicorn/qemu/accel/tcg/cputlb.c)
-# patch qemu tbgen buffer size to 64MB
+# patch qemu tbgen buffer size to 128MB
 execute_process(COMMAND ${PYTHON}
   ${ICPP_ROOT}/tool/qemu_tbgen_patcher.py
-  ${ICPP_ROOT}/third/unicorn/qemu/softmmu/vl.c)
+  ${ICPP_ROOT}/third/unicorn/qemu/softmmu/vl.c 128)
 add_subdirectory(${ICPP_ROOT}/third/unicorn
                  ${CMAKE_BINARY_DIR}/unicorn)
 

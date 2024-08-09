@@ -5,6 +5,7 @@ Bug fixes:
 
 Improvements:
  * icpp: automatically generate the standard module pcm file in user local system;
+ * icpp: add qemu tb buffer to 128MB per thread;
  * imod: add assets configuration to support icpp module extra payloads;
  * imod: make an os independent module if there's no extra include paths;
 

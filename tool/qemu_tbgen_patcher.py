@@ -10,8 +10,8 @@ import sys
 icpp_patch_magic = "/* Patched by ICPP to set a proper tbgen buffer size. */\n"
 
 def patch_qemu_tbgen(argv):
-    if len(argv) != 2:
-        print("Usage: %s /path/to/qemu/softmmu/vl.c" % (argv[0]))
+    if len(argv) != 3:
+        print("Usage: %s /path/to/qemu/softmmu/vl.c MB" % (argv[0]))
         sys.exit(-1)
     srcf = argv[1]
     with open(srcf, 'r') as fp:
@@ -23,7 +23,7 @@ def patch_qemu_tbgen(argv):
     with open(srcf, 'w') as fp:
         fp.write(icpp_patch_magic)
         fp.write(srcbuf.replace('uc->tcg_exec_init(uc, 0)', 
-                                'uc->tcg_exec_init(uc, 64 * 1024 * 1024)'))
+                                'uc->tcg_exec_init(uc, %s * 1024 * 1024)' % (argv[2])))
         print("The file %s has been patched." % (srcf))
         sys.exit(0)
 
