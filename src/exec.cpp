@@ -163,7 +163,8 @@ private:
 struct ExecEngine {
   // clone a new execute engine for thread function
   ExecEngine(ExecEngine &exec)
-      : loader_(exec.loader_), iargs_(exec.iargs_), iobject_(exec.iobject_) {
+      : clone_(true), loader_(exec.loader_), iargs_(exec.iargs_),
+        iobject_(exec.iobject_) {
     init();
   }
 
@@ -173,7 +174,13 @@ struct ExecEngine {
       : loader_(object.get(), deps), iargs_(iargs), iobject_(object) {
     init();
   }
+
   ~ExecEngine() {
+    if (clone_) {
+      ue.release(uc_);
+      return;
+    }
+
     // execute destructor in iobject file
     execDtor();
     // give back the borrowed uc instance
@@ -307,6 +314,9 @@ private:
   }
 
 private:
+  // this is a cloned instance
+  bool clone_ = false;
+
   // object dependency module loader
   Loader loader_;
   // argc and argv for object main entry
@@ -356,60 +366,47 @@ private:
 
 void ExecEngine::run(uint64_t pc, ContextICPP *regs) {
   constexpr const int stack_switch_size = 128;
-  // backup the old context and set a new one
+
+  char *vmstack = reinterpret_cast<char *>(topStack()) - stack_switch_size;
 #if ARCH_ARM64
-  auto pcrid = UC_ARM64_REG_PC;
-  auto backup = loadRegisterAArch64();
-  char *vmstack =
-      reinterpret_cast<char *>(backup.r[A64_SP]) - stack_switch_size;
-  char *hoststack = reinterpret_cast<char *>(regs->r[A64_SP]);
-  // load host stack
-  std::memcpy(vmstack, hoststack, stack_switch_size);
   topreturn_ = reinterpret_cast<void *>(regs->r[A64_LR]);
+  char *hoststack = reinterpret_cast<char *>(regs->r[A64_SP]);
   // set vm stack
   regs->r[A64_SP] = reinterpret_cast<uint64_t>(vmstack);
   saveRegisterAArch64(*regs);
 #else
-  auto pcrid = UC_X86_REG_RIP;
-  auto backup = loadRegisterX64();
-  char *vmstack = reinterpret_cast<char *>(backup.rsp) - stack_switch_size;
-  char *hoststack = reinterpret_cast<char *>(regs->rsp);
-  // load host stack
-  std::memcpy(vmstack, hoststack, stack_switch_size);
   topreturn_ = *reinterpret_cast<void **>(regs->rsp);
+  char *hoststack = reinterpret_cast<char *>(regs->rsp);
   // set vm stack
   regs->rsp = reinterpret_cast<uint64_t>(vmstack);
   saveRegisterX64(*regs);
 #endif
-  // backup old pc
-  uint64_t pcbackup;
-  uc_reg_read(uc_, pcrid, &pcbackup);
 
+  // load host stack
+  std::memcpy(vmstack, hoststack, stack_switch_size);
   // run the current pc
   execLoop(pc);
-  topreturn_ = nullptr;
+  // load vm stack
+  std::memcpy(hoststack, vmstack, stack_switch_size);
 
   // save the current context and restore the old one
 #if ARCH_ARM64
   *regs = loadRegisterAArch64();
-  saveRegisterAArch64(backup);
   regs->r[A64_SP] = reinterpret_cast<uint64_t>(hoststack);
 #else
   *regs = loadRegisterX64();
-  saveRegisterX64(backup);
   regs->rsp = reinterpret_cast<uint64_t>(hoststack);
 #endif
-  // restore old pc
-  uc_reg_write(uc_, pcrid, &pcbackup);
 }
 
 extern "C" void exec_engine_main(StubContext *ctx, ContextICPP *regs) {
-  auto engine = (ExecEngine *)(ctx->context);
 #if ARCH_X64
   // stub code has set rax as rsp
   regs->rsp = regs->rax;
 #endif
-  engine->run(ctx->vmfunc, regs);
+
+  auto engine = ExecEngine(*(ExecEngine *)ctx->context);
+  engine.run(ctx->vmfunc, regs);
 }
 
 void ExecEngine::init() {
