@@ -5,6 +5,8 @@ Bug fixes:
  * icpp: fix stub function execution error in multiple threads;
  * icpp: fix the program full path modified by llvm;
  * icpp: fix the dladdr relative icpp path for argv;
+ * icpp: fix missing x86_64 callmem/jumpmem stub check;
+ * icpp: fix missing stubvms map clone for thread exec engine;
  * imod: fix icpp module list error;
 
 Improvements:

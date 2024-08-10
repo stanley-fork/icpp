@@ -164,7 +164,8 @@ struct ExecEngine {
   // clone a new execute engine for thread function
   ExecEngine(ExecEngine &exec)
       : clone_(true), loader_(exec.loader_), iargs_(exec.iargs_),
-        iobject_(exec.iobject_) {
+        iobject_(exec.iobject_), vmstubs_(exec.vmstubs_),
+        stubvms_(exec.stubvms_) {
     init();
   }
 
@@ -1522,8 +1523,10 @@ bool ExecEngine::interpret(const InsnInfo *&inst, uint64_t &pc, int &step) {
     }
     // encoded meta data layout:[[uint16_t-memory_items]]
     case INSN_X64_CALLMEM: {
-      auto target = interpretCalcMemX64(inst, pc, 0);
-      jump = interpretCallX64(inst, pc, *reinterpret_cast<uint64_t *>(target));
+      auto targetmem = interpretCalcMemX64(inst, pc, 0);
+      auto target = *reinterpret_cast<uint64_t *>(targetmem);
+      target = checkStub(target);
+      jump = interpretCallX64(inst, pc, target);
       break;
     }
     // encoded meta data layout:[uint64_t]
@@ -1567,8 +1570,10 @@ bool ExecEngine::interpret(const InsnInfo *&inst, uint64_t &pc, int &step) {
     }
     // encoded meta data layout:[[uint16_t-memory_items]]
     case INSN_X64_JUMPMEM: {
-      auto target = interpretCalcMemX64(inst, pc, 0);
-      jump = interpretJumpX64(inst, pc, *reinterpret_cast<uint64_t *>(target));
+      auto targetmem = interpretCalcMemX64(inst, pc, 0);
+      auto target = *reinterpret_cast<uint64_t *>(targetmem);
+      target = checkStub(target);
+      jump = interpretJumpX64(inst, pc, target);
       break;
     }
     // encoded meta data layout:[uint16_t, [uint16_t-memory_items]]
