@@ -364,23 +364,36 @@ private:
 #endif
 };
 
+// current thread execution engine instance
+static thread_local ExecEngine *exec_engine = nullptr;
+
 void ExecEngine::run(uint64_t pc, ContextICPP *regs) {
   constexpr const int stack_switch_size = 128;
 
-  char *vmstack = reinterpret_cast<char *>(topStack()) - stack_switch_size;
+  // backup the old context and set a new one
 #if ARCH_ARM64
-  topreturn_ = reinterpret_cast<void *>(regs->r[A64_LR]);
+  auto pcrid = UC_ARM64_REG_PC;
+  auto backup = loadRegisterAArch64();
+  char *vmstack =
+      reinterpret_cast<char *>(backup.r[A64_SP]) - stack_switch_size;
   char *hoststack = reinterpret_cast<char *>(regs->r[A64_SP]);
+  topreturn_ = reinterpret_cast<void *>(regs->r[A64_LR]);
   // set vm stack
   regs->r[A64_SP] = reinterpret_cast<uint64_t>(vmstack);
   saveRegisterAArch64(*regs);
 #else
-  topreturn_ = *reinterpret_cast<void **>(regs->rsp);
+  auto pcrid = UC_X86_REG_RIP;
+  auto backup = loadRegisterX64();
+  char *vmstack = reinterpret_cast<char *>(backup.rsp) - stack_switch_size;
   char *hoststack = reinterpret_cast<char *>(regs->rsp);
+  topreturn_ = *reinterpret_cast<void **>(regs->rsp);
   // set vm stack
   regs->rsp = reinterpret_cast<uint64_t>(vmstack);
   saveRegisterX64(*regs);
 #endif
+  // backup old pc
+  uint64_t pcbackup;
+  uc_reg_read(uc_, pcrid, &pcbackup);
 
   // load host stack
   std::memcpy(vmstack, hoststack, stack_switch_size);
@@ -389,14 +402,20 @@ void ExecEngine::run(uint64_t pc, ContextICPP *regs) {
   // load vm stack
   std::memcpy(hoststack, vmstack, stack_switch_size);
 
+  topreturn_ = nullptr;
+
   // save the current context and restore the old one
 #if ARCH_ARM64
   *regs = loadRegisterAArch64();
+  saveRegisterAArch64(backup);
   regs->r[A64_SP] = reinterpret_cast<uint64_t>(hoststack);
 #else
   *regs = loadRegisterX64();
+  saveRegisterX64(backup);
   regs->rsp = reinterpret_cast<uint64_t>(hoststack);
 #endif
+  // restore old pc
+  uc_reg_write(uc_, pcrid, &pcbackup);
 }
 
 extern "C" void exec_engine_main(StubContext *ctx, ContextICPP *regs) {
@@ -405,11 +424,13 @@ extern "C" void exec_engine_main(StubContext *ctx, ContextICPP *regs) {
   regs->rsp = regs->rax;
 #endif
 
-  auto engine = ExecEngine(*(ExecEngine *)ctx->context);
-  engine.run(ctx->vmfunc, regs);
+  // use the instance in thread local storage
+  exec_engine->run(ctx->vmfunc, regs);
 }
 
 void ExecEngine::init() {
+  exec_engine = this;
+
   robject_ = iobject_.get();
   // get a unicorn instruction emulation instance
   uc_ = ue.acquire(robject_);
@@ -1945,8 +1966,6 @@ void ExecEngine::dump() {
   std::longjmp(jmpbuf_, true);
 }
 
-// current execution engine instance
-static ExecEngine *exec_engine = nullptr;
 static bool llvm_signal_installed = false;
 static void llvm_signal_handler(void *) {
   exec_engine->dump();
@@ -1963,8 +1982,6 @@ int ExecEngine::run(bool lib) {
     llvm_signal_installed = true;
     llvm::sys::AddSignalHandler(llvm_signal_handler, nullptr);
   }
-  // update current execute engine instance
-  exec_engine = this;
 
   if (execCtor()) {
     if (!lib && execMain()) {
