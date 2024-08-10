@@ -62,12 +62,13 @@ int __attribute__((visibility("default"))) icpp_main(int argc,
     // make relative path also work
     Dl_info dli;
     dladdr(reinterpret_cast<const void *>(&icpp_main), &dli);
-    auto program = fs::absolute(dli.dli_fname).string();
+    char progbuf[1024];
+    auto program = realpath(dli.dli_fname, progbuf);
     auto libicpp = fs::path(program).parent_path() / icpp;
 
     // make sure argv[0] passing to icpp runtime is an absolute path,
     // the compilation task depends on it
-    program_set_t progset(argv, program.data());
+    program_set_t progset(argv, program);
 
     auto icpp_main = dll::import_symbol<int(int, const char **)>(
         libicpp.string(), "icpp_main");
