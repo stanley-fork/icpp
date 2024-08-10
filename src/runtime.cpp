@@ -34,19 +34,13 @@ fs::path RuntimeLib::includeFull() {
   return must_exist(repo() / includeRelative());
 }
 
-fs::path RuntimeLib::includeFull(std::string_view module) {
-  // .icpp/include must exist anyway
-  return module.size() ? repo() / includeRelative(module)
-                       : must_exist(repo() / includeRelative());
-}
-
 fs::path RuntimeLib::libFull() { return must_exist(repo() / libRelative()); }
 
 void RuntimeLib::initHashes() {
   if (hashes_.size())
     return;
 
-  for (auto &entry : fs::recursive_directory_iterator(libFull())) {
+  for (auto &entry : fs::directory_iterator(libFull())) {
     if (entry.is_directory()) {
       auto hashfile = entry.path() / hashFile;
       auto expBuff = llvm::MemoryBuffer::getFile(hashfile.string());

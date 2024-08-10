@@ -44,19 +44,27 @@ public:
   fs::path includeRelative(std::string_view module) {
     return includeRelative() / module;
   }
+
   fs::path binRelative(std::string_view module) {
     return binRelative() / module;
   }
+
   fs::path libRelative(std::string_view module) {
     return libRelative() / module;
   }
-  fs::path includeFull(std::string_view module);
+
   fs::path assetFull(std::string_view module) {
     return repo() / assetRelative(module);
   }
+
+  fs::path includeFull(std::string_view module) {
+    return repo() / includeRelative(module);
+  }
+
   fs::path binFull(std::string_view module) {
     return repo() / binRelative(module);
   }
+
   fs::path libFull(std::string_view module) {
     return repo() / libRelative(module);
   }

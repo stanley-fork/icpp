@@ -5,6 +5,7 @@ Bug fixes:
  * icpp: fix stub function execution error in multiple threads;
  * icpp: fix the program full path modified by llvm;
  * icpp: fix the dladdr relative icpp path for argv;
+ * imod: fix icpp module list error;
 
 Improvements:
  * icpp: automatically generate the standard module pcm file in user local system;

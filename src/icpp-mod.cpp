@@ -540,10 +540,10 @@ static void uninstall_module(std::string_view name) {
 
 static void list_module() {
   icpp::log_print(icpp::Raw, "Installed module:");
-  for (auto &entry : fs::directory_iterator(Rtlib::inst().includeFull(""))) {
-    if (entry.is_directory()) {
+  for (auto &entry : fs::directory_iterator(Rtlib::inst().libFull())) {
+    auto hashfile = entry.path() / Rtlib::inst().hashFile;
+    if (fs::exists(hashfile))
       icpp::log_print(icpp::Raw, " * {}", entry.path().filename().string());
-    }
   }
 }
 
