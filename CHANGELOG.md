@@ -3,6 +3,7 @@ Bug fixes:
  * icpp: fix optimization argument without effect error;
  * icpp: fix the standard module pcm include path error;
  * icpp: fix stub function execution error in multiple threads;
+ * icpp: fix the program full path modified by llvm;
 
 Improvements:
  * icpp: automatically generate the standard module pcm file in user local system;

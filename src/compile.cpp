@@ -295,14 +295,18 @@ static void precompile_module(const char *argv0, const fs::path &root,
 
   std::vector<const char *> args;
   args.push_back(argv0);
+  args.push_back("-w");
 #if _WIN32
+  std::string outarg("/clang:");
+  outarg += pcmpath;
+  args.push_back("/clang:-o");
+  args.push_back(outarg.data());
   args.push_back("/clang:--precompile");
 #else
-  args.push_back("--precompile");
-#endif
-  args.push_back("-w");
   args.push_back("-o");
   args.push_back(pcmpath.data());
+  args.push_back("--precompile");
+#endif
   args.push_back(cppmpath.data());
 
   log_print(Develop, "Precompiling {} to {} ...", cppmpath, pcmpath);
