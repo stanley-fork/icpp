@@ -8,6 +8,7 @@
 
 #include "utils.h"
 #include <map>
+#include <regex>
 #include <vector>
 
 namespace com {
@@ -155,9 +156,26 @@ will be built by clang-icpp, so the std::string may be defined in a different
 way, to avoid the type mismatch, herein gives it an old C style one.
 
 As of this, if you want to extend icpp runtime with native modules, the type
-mismatch situation must be considered  on Windows.
+mismatch situation must be considered on Windows.
 */
 std::string_view rand_string(char *buff, int length);
+
+struct regex {
+  regex(std::string_view pattern, int flags = std::regex_constants::ECMAScript |
+                                              std::regex_constants::icase) {
+    init(pattern, flags);
+  }
+  ~regex() { deinit(); }
+  regex() = delete;
+
+  // return true if str matches the initial pattern
+  bool search(std::string_view str) const;
+
+  // private:
+  void init(std::string_view pattern, int flags);
+  void deinit();
+  void *context_;
+};
 
 } // namespace api
 

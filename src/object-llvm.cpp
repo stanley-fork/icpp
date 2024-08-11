@@ -1774,9 +1774,13 @@ void Object::parseSections() {
                       reinterpret_cast<uint64_t>(expContent->data())});
       // file rva relative to text[0] section
       news.frva = news.vm - textsects_[0].vm;
+      if (ofile_->isELF())
+        news.vrva = news.frva - textsects_[0].frva;
       if (0) {
-        log_print(Develop, "Section {} frva={:x}, vmrva={:x} vm={:x} size={}.",
-                  name.data(), news.frva, news.vrva, news.vm, news.size);
+        log_print(Develop,
+                  "Section index={} frva={:x} vmrva={:x} vm={:x} size={} {}.",
+                  news.index, news.frva, news.vrva, news.vm, news.size,
+                  name.data());
       }
     } else if (s.isBSS() || name.ends_with("bss") || name.ends_with("common")) {
       dynsects_.push_back(

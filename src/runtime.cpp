@@ -202,6 +202,22 @@ std::string_view rand_string(char *buff, int length) {
   return {buff, static_cast<size_t>(length)};
 }
 
+void regex::init(std::string_view pattern, int flags) {
+  auto rflags = static_cast<std::regex_constants::syntax_option_type>(flags);
+  context_ = new std::regex(pattern.data(), rflags);
+}
+
+void regex::deinit() {
+  auto preg = static_cast<std::regex *>(context_);
+  delete preg;
+}
+
+// return true if str matches the initial pattern
+bool regex::search(std::string_view str) const {
+  auto preg = static_cast<std::regex *>(context_);
+  return std::regex_search(str.data(), str.data() + str.size(), *preg);
+}
+
 } // namespace api
 
 } // namespace icpp

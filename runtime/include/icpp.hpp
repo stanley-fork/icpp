@@ -37,6 +37,7 @@
 // c style
 #include <filesystem>
 #include <format>
+#include <regex>
 #include <string>
 #include <string_view>
 #else
@@ -152,5 +153,22 @@ template <size_t N> std::string rand_string() {
   auto tstr = rand_string(buff, N);
   return {tstr.data(), N};
 }
+
+struct regex {
+  regex(std::string_view pattern, int flags = std::regex_constants::ECMAScript |
+                                              std::regex_constants::icase) {
+    init(pattern, flags);
+  }
+  ~regex() { deinit(); }
+  regex() = delete;
+
+  // return true if str matches the initial pattern
+  bool search(std::string_view str) const;
+
+private:
+  void init(std::string_view pattern, int flags);
+  void deinit();
+  void *context_;
+};
 
 } // namespace icpp

@@ -296,6 +296,20 @@ struct ModuleLoader {
         {apisym(
              __ZN4icpp10result_setERKNSt3__117basic_string_viewIcNS0_11char_traitsIcEEEE),
          reinterpret_cast<const void *>(&api::result_sets)});
+
+    auto regexInit = &api::regex::init;
+    auto regexDeinit = &api::regex::deinit;
+    auto regexSearch = &api::regex::search;
+    syms_.insert(
+        {apisym(
+             __ZN4icpp5regex4initENSt3__117basic_string_viewIcNS1_11char_traitsIcEEEEi),
+         *(const void **)(&regexInit)});
+    syms_.insert(
+        {apisym(__ZN4icpp5regex6deinitEv), *(const void **)(&regexDeinit)});
+    syms_.insert(
+        {apisym(
+             __ZNK4icpp5regex6searchENSt3__117basic_string_viewIcNS1_11char_traitsIcEEEE),
+         *(const void **)(&regexSearch)});
 #endif
   }
 
