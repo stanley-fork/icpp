@@ -184,6 +184,9 @@ struct ModuleLoader {
       RuntimeLib::inst().initHashes();
 
     // cache the apis
+    auto regexInit = &api::regex::init;
+    auto regexDeinit = &api::regex::deinit;
+    auto regexSearch = &api::regex::search;
 #if ON_WINDOWS
     syms_.insert({"?home_directory@icpp@@YA?AV?$basic_string_view@DU?$char_"
                   "traits@D@__1@std@@@__1@std@@XZ",
@@ -232,6 +235,14 @@ struct ModuleLoader {
     syms_.insert({"?result_set@icpp@@YAXAEBV?$basic_string_view@DU?$char_"
                   "traits@D@__1@std@@@__1@std@@@Z",
                   api::result_sets});
+    syms_.insert({"?init@regex@icpp@@AEAAXV?$basic_string_view@DU?$char_traits@"
+                  "D@__1@std@@@__1@std@@H@Z",
+                  *(const void **)(&regexInit)});
+    syms_.insert(
+        {"?deinit@regex@icpp@@AEAAXXZ", *(const void **)(&regexDeinit)});
+    syms_.insert({"?search@regex@icpp@@QEBA_NV?$basic_string_view@DU?$char_"
+                  "traits@D@__1@std@@@__1@std@@@Z",
+                  *(const void **)(&regexSearch)});
 #else
 #if __APPLE__
 #define apisym(n) #n
@@ -296,10 +307,6 @@ struct ModuleLoader {
         {apisym(
              __ZN4icpp10result_setERKNSt3__117basic_string_viewIcNS0_11char_traitsIcEEEE),
          reinterpret_cast<const void *>(&api::result_sets)});
-
-    auto regexInit = &api::regex::init;
-    auto regexDeinit = &api::regex::deinit;
-    auto regexSearch = &api::regex::search;
     syms_.insert(
         {apisym(
              __ZN4icpp5regex4initENSt3__117basic_string_viewIcNS1_11char_traitsIcEEEEi),
