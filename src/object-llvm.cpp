@@ -1455,7 +1455,7 @@ void Object::decodeInsns(TextSection &text) {
         auto rit = irelocs_.end();
         for (auto it = irelocs_.begin(), end = irelocs_.end(); it != end;
              it++) {
-          if (rtaddr == it->target) {
+          if (rtaddr == it->target && symtype == it->type) {
             rit = it;
             // fix it as a data relocation for coff object
             if (arch_ == AArch64 && ofile_->isCOFF() &&

@@ -1,3 +1,7 @@
+## v0.1.3
+Bug fixes:
+ * icpp: fix relocation cache type comparison error;
+
 ## v0.1.2
 Bug fixes:
  * icpp: fix optimization argument without effect error;
